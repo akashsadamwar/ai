@@ -1,13 +1,15 @@
 # app.py
 
 import os
-import json
 import traceback
 from typing import List
 
+from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from groq import Groq
 import serverless_wsgi
+
+load_dotenv()
 
 # ---------- App setup ----------
 app = Flask(__name__)
@@ -26,7 +28,7 @@ def add_cors_headers(response):
 print("GROQ key present at startup:", bool(os.getenv("GROQ_API_KEY")))
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-MODEL_NAME = "llama-3.1-8b-instant"
+MODEL_NAME = "openai/gpt-oss-20b"
 
 # ---------- Categories / Prompts ----------
 categories: List[str] = [
@@ -84,8 +86,9 @@ category_prompts = {
 # ---------- Helpers ----------
 def _parse_categories(raw: str) -> List[str]:
     # Split on commas or newlines, trim, filter to known categories
-    parts = [p.strip() for p in raw.replace("\n", ",").split(",")]
-    return [p for p in parts if p in categories][:3]
+    parts = [p.strip(" \t-*`'\"0123456789.") for p in raw.replace("\n", ",").split(",")]
+    category_lookup = {category.casefold(): category for category in categories}
+    return [category_lookup[p.casefold()] for p in parts if p.casefold() in category_lookup][:3]
 
 # ---------- Core LLM calls ----------
 def predict_categories(subject: str, description: str) -> List[str]:
@@ -105,15 +108,14 @@ Output (comma-separated categories):
     resp = client.chat.completions.create(
         model=MODEL_NAME,
         messages=[{"role": "user", "content": prompt}],
-        temperature=0.5,
+        temperature=0,
         top_p=0.3,
     )
     raw_output = resp.choices[0].message.content.strip()
     result = _parse_categories(raw_output)
 
-    # Fallback: if model returns nothing valid, return first three general categories
     if not result:
-        result = ["Finance", "Housing", "Jobs"][:3]
+        raise ValueError("Groq returned no valid categories")
     return result
 
 
@@ -139,7 +141,7 @@ def home():
 @app.route("/predict_categories", methods=["POST"])
 def predict_categories_api():
     try:
-        data = request.get_json(force=True) or {}
+        data = request.get_json(silent=True) or {}
         subject = (data.get("subject") or "").strip()
         description = (data.get("description") or "").strip()
         if not subject or not description:
@@ -154,12 +156,14 @@ def predict_categories_api():
 @app.route("/generate_answer", methods=["POST"])
 def generate_answer_api():
     try:
-        data = request.get_json(force=True) or {}
+        data = request.get_json(silent=True) or {}
         category = (data.get("category") or "").strip()
         subject = (data.get("subject") or "").strip()
         question = (data.get("description") or "").strip()
         if not category or not subject or not question:
             return jsonify({"error": "Category, subject, and description are required"}), 400
+        if category not in categories:
+            return jsonify({"error": "Invalid category"}), 400
 
         answer = chat_with_llama(category, subject, question)
         # jsonify(answer) returns a JSON string (what your existing client likely expects)
@@ -177,15 +181,4 @@ def lambda_handler(event, context):
 
 # ---------- Local dev runner ----------
 if __name__ == "__main__":
-    # Load .env for local dev if present
-    try:
-        from dotenv import load_dotenv
-        load_dotenv()
-    except Exception:
-        pass
-
-    # Recreate client in case GROQ_API_KEY came from .env after import time
-    if not os.getenv("GROQ_API_KEY"):
-        print("WARNING: GROQ_API_KEY is not set. Set it before calling endpoints that hit Groq.")
-
     app.run(host="0.0.0.0", port=8000, debug=True)
