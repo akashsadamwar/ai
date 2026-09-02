@@ -23,11 +23,11 @@ This document offers a complete overview of the Saayam GroqAPI service, detailin
 
 ## 2\. What Has Been Done So Far
 
-  * Defined a list of **50+ categories** spanning finance, education, health, sports, and more.
+  * Defined a list of **38 categories** spanning finance, education, health, sports, and more.
   * Implemented **two Flask routes**:
       * `/predict_categories` for category classification.
       * `/generate_answer` for answer generation.
-  * Integrated the **Groq LLM client** (`llama-3.1-8b-instant`) for model inference.
+  * Integrated the **Groq LLM client** (`openai/gpt-oss-20b`) for model inference.
   * Packaged the Flask application for AWS Lambda with **`serverless_wsgi`**.
   * Deployed the function to the `us-east-1` region under the Lambda name **`groqapi`**.
 
@@ -119,7 +119,7 @@ def predict_categories(subject, description):
     """
 
     response = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
+        model="openai/gpt-oss-20b",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.5,
         top_p=0.3
@@ -143,7 +143,7 @@ def chat_with_llama(category, subject, description):
     role_prompt = category_prompts.get(category, "You are a helpful expert from Saayam. Answer clearly.")
     full_prompt = f"{role_prompt}\n\nSubject: {subject}\nQuestion: {description}"
     response = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
+        model="openai/gpt-oss-20b",
         messages=[{"role": "user", "content": full_prompt}],
         temperature=0.7
     )

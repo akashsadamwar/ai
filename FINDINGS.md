@@ -51,5 +51,4 @@ Still recommended:
 - Add input-length limits, request authentication, rate limiting, and Groq timeouts.
 - Add medical and financial safety language; the current prompts present the model as a
   clinician or advisor without guardrails.
-- Pin or lock dependency versions and remove the unused `requests` dependency.
-- Update the README claim of "50+ categories"; the code currently contains 38.
+- Pin or lock dependency versions.

@@ -25,7 +25,6 @@ def add_cors_headers(response):
 
 # ---------- Groq client ----------
 # Read key from environment (set GROQ_API_KEY in shell or .env)
-print("GROQ key present at startup:", bool(os.getenv("GROQ_API_KEY")))
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 MODEL_NAME = "openai/gpt-oss-20b"
@@ -181,4 +180,4 @@ def lambda_handler(event, context):
 
 # ---------- Local dev runner ----------
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000, debug=True)
+    app.run(host="0.0.0.0", port=8000, debug=os.getenv("FLASK_DEBUG") == "1")
