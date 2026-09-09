@@ -140,13 +140,15 @@ def home():
 @app.route("/predict_categories", methods=["POST"])
 def predict_categories_api():
     try:
-        data = request.get_json(silent=True) or {}
-        subject = (data.get("subject") or "").strip()
-        description = (data.get("description") or "").strip()
-        if not subject or not description:
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return jsonify({"error": "Subject and description are required"}), 400
+        subject = data.get("subject")
+        description = data.get("description")
+        if not all(isinstance(value, str) and value.strip() for value in (subject, description)):
             return jsonify({"error": "Subject and description are required"}), 400
 
-        cats = predict_categories(subject, description)
+        cats = predict_categories(subject.strip(), description.strip())
         return jsonify(cats), 200
     except Exception:
         traceback.print_exc()
@@ -155,12 +157,15 @@ def predict_categories_api():
 @app.route("/generate_answer", methods=["POST"])
 def generate_answer_api():
     try:
-        data = request.get_json(silent=True) or {}
-        category = (data.get("category") or "").strip()
-        subject = (data.get("subject") or "").strip()
-        question = (data.get("description") or "").strip()
-        if not category or not subject or not question:
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
             return jsonify({"error": "Category, subject, and description are required"}), 400
+        category = data.get("category")
+        subject = data.get("subject")
+        question = data.get("description")
+        if not all(isinstance(value, str) and value.strip() for value in (category, subject, question)):
+            return jsonify({"error": "Category, subject, and description are required"}), 400
+        category, subject, question = (value.strip() for value in (category, subject, question))
         if category not in categories:
             return jsonify({"error": "Invalid category"}), 400
 

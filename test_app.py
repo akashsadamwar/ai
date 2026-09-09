@@ -21,6 +21,14 @@ class AppSmokeTest(unittest.TestCase):
             client.post("/predict_categories", data="{", content_type="application/json").status_code,
             400,
         )
+        self.assertEqual(client.post("/predict_categories", json=[]).status_code, 400)
+        self.assertEqual(
+            client.post(
+                "/predict_categories",
+                json={"subject": 123, "description": "Open an account"},
+            ).status_code,
+            400,
+        )
         self.assertEqual(
             client.post(
                 "/generate_answer",
