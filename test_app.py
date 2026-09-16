@@ -8,6 +8,12 @@ import app
 
 
 class AppSmokeTest(unittest.TestCase):
+    def test_category_parsing_deduplicates_before_limiting(self):
+        self.assertEqual(
+            app._parse_categories("Banking, banking\r\nFinance\r\nUnknown, Investing, Books"),
+            ["Banking", "Finance", "Investing"],
+        )
+
     def test_routes_and_validation(self):
         client = app.app.test_client()
 

@@ -84,10 +84,10 @@ category_prompts = {
 
 # ---------- Helpers ----------
 def _parse_categories(raw: str) -> List[str]:
-    # Split on commas or newlines, trim, filter to known categories
-    parts = [p.strip(" \t-*`'\"0123456789.") for p in raw.replace("\n", ",").split(",")]
+    # Split, trim, and keep up to three distinct known categories in order.
+    parts = [p.strip(" \t\r-*`'\"0123456789.") for p in raw.replace("\n", ",").split(",")]
     category_lookup = {category.casefold(): category for category in categories}
-    return [category_lookup[p.casefold()] for p in parts if p.casefold() in category_lookup][:3]
+    return list(dict.fromkeys(category_lookup[p.casefold()] for p in parts if p.casefold() in category_lookup))[:3]
 
 # ---------- Core LLM calls ----------
 def predict_categories(subject: str, description: str) -> List[str]:
