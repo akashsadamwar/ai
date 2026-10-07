@@ -110,7 +110,7 @@ Output (comma-separated categories):
         temperature=0,
         top_p=0.3,
     )
-    raw_output = resp.choices[0].message.content.strip()
+    raw_output = (resp.choices[0].message.content or "").strip()
     result = _parse_categories(raw_output)
 
     if not result:
@@ -130,7 +130,10 @@ def chat_with_llama(category: str, subject: str, description: str) -> str:
         messages=[{"role": "user", "content": full_prompt}],
         temperature=0.7,
     )
-    return resp.choices[0].message.content.strip()
+    answer = (resp.choices[0].message.content or "").strip()
+    if not answer:
+        raise ValueError("Groq returned no answer")
+    return answer
 
 # ---------- Routes ----------
 @app.route("/", methods=["GET"])
@@ -180,7 +183,10 @@ def generate_answer_api():
 def lambda_handler(event, context):
     # Normalize a path prefix if using API Gateway stage mapping in AWS
     if isinstance(event, dict) and "path" in event and isinstance(event["path"], str):
-        event["path"] = event["path"].replace("/dev/genai/v0.0.1", "")
+        prefix = "/dev/genai/v0.0.1"
+        path = event["path"]
+        if path == prefix or path.startswith(prefix + "/"):
+            event = {**event, "path": path[len(prefix):] or "/"}
     return serverless_wsgi.handle_request(app, event, context)
 
 # ---------- Local dev runner ----------
