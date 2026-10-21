@@ -141,6 +141,10 @@ def _flood(feature):
     running = properties["iscurrent"]
     if running not in ("true", "false"):
         raise ValueError(f"iscurrent is {running!r}")
+    started_at = _utc(properties["fromdate"])
+    ended_at = _utc(properties["todate"])
+    if ended_at < started_at:
+        raise ValueError("flood end date precedes its start date")
     return {
         "event_id": _whole(properties["eventid"]),
         "episode_id": _whole(properties["episodeid"]),
@@ -149,8 +153,8 @@ def _flood(feature):
         "latitude": _real(latitude, -90, 90),
         "longitude": _real(longitude, -180, 180),
         "running": running == "true",
-        "started_at": _utc(properties["fromdate"]),
-        "ended_at": _utc(properties["todate"]),
+        "started_at": started_at,
+        "ended_at": ended_at,
     }
 
 
@@ -195,7 +199,12 @@ def _affected_area(flood):
         for ring in polygon:
             if not isinstance(ring, list) or len(ring) < 4:
                 raise ValueError("an affected ring has fewer than four positions")
-            rings.append([_position(position) for position in ring])
+            positions = [_position(position) for position in ring]
+            if positions[0] != positions[-1]:
+                raise ValueError("an affected ring is not closed")
+            if len({tuple(position) for position in positions[:-1]}) < 3:
+                raise ValueError("an affected ring has fewer than three distinct positions")
+            rings.append(positions)
         area.append(rings)
     return {"type": "MultiPolygon", "coordinates": area}
 
