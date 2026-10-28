@@ -45,10 +45,14 @@ Fixed locally:
   Groq returns no valid category.
 - The repository did not protect `.env` or include an executable test.
 
+- CORS origins, model, Groq timeout, and field-length limit are configurable through
+  environment variables (see `.env.example`); request bodies over 64 KB return 413.
+- Role prompts are sent as system messages, and medical and financial categories carry
+  safety guardrails.
+- Groq failures return 502 `upstream_error` instead of a generic 500.
+- Dependency versions are pinned.
+
 Still recommended:
 
-- Restrict wildcard CORS and disable Flask debug mode outside local development.
-- Add input-length limits, request authentication, rate limiting, and Groq timeouts.
-- Add medical and financial safety language; the current prompts present the model as a
-  clinician or advisor without guardrails.
-- Pin or lock dependency versions.
+- Set `ALLOWED_ORIGINS` to the real frontend origin in production.
+- Add request authentication and rate limiting (e.g. at API Gateway).
