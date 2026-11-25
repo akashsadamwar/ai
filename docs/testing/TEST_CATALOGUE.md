@@ -39,7 +39,7 @@ be marked `needs_network`, which is excluded from the default run and from CI.
 | [`tests/test_gardening_category.py`](../../tests/test_gardening_category.py) | Unit | #217 | `services/classification_service.py` | 15 |
 | [`tests/test_generate_answer.py`](../../tests/test_generate_answer.py) | Contract | #169 | `generate_answer_handler` | 50 |
 | [`tests/test_import_blast_radius.py`](../../tests/test_import_blast_radius.py) | Integration | #169, #171 | `module-scope imports` | 4 |
-| [`tests/test_induced_failure_drills.py`](../../tests/test_induced_failure_drills.py) | Unit | #195 | `provider outages across the four GenAI handlers` | 32 |
+| [`tests/test_induced_failure_drills.py`](../../tests/test_induced_failure_drills.py) | Unit | #195 | `provider outages across the five model-backed handlers` | 150 |
 | [`tests/test_lambda_session_memory.py`](../../tests/test_lambda_session_memory.py) | Integration | #197 | `generate_answer_handler session memory` | 11 |
 | [`tests/test_memory_controls.py`](../../tests/test_memory_controls.py) | Integration | #197 | `local_memory_controls_handler` | 5 |
 | [`tests/test_memory_integration.py`](../../tests/test_memory_integration.py) | Integration | #197 | `session_memory + SQLite store` | 1 |
@@ -60,7 +60,7 @@ be marked `needs_network`, which is excluded from the default run and from CI.
 | [`tests/test_smoke_tool.py`](../../tests/test_smoke_tool.py) | Unit | #252 | `tools/smoke_check.py, tests/smoke/` | 23 |
 | [`tests/test_subject_generator.py`](../../tests/test_subject_generator.py) | Unit | - | `utils/subject_generator.py` | 13 |
 | [`tests/test_token_usage.py`](../../tests/test_token_usage.py) | - | #159 | `utils/token_usage.py` | 58 |
-| | | | **Total** | **881** |
+| | | | **Total** | **999** |
 
 ## Every test
 
@@ -451,16 +451,19 @@ Cross-service blast radius at import time - issue #171.
 
 ### `test_induced_failure_drills.py`
 
-*Unit · issue #195 · 32 tests*
+*Unit · issue #195 · 150 tests*
 
-Drill complete provider failure at the four GenAI Lambda entry points.
+Drill complete provider failure at every model-backed GenAI entry point.
 
 | Test | Behaviour it protects |
 | --- | --- |
 | `test_total_provider_failure_returns_service_error` | Provider outages must be distinguishable from successful responses. |
+| `test_total_provider_failure_hides_provider_detail` | The caller learns that a provider failed, never which one or why. |
 | `test_total_provider_failure_logs_each_model` | A provider warning identifies each model and its failure class. |
+| `test_total_provider_failure_keeps_user_text_out_of_logs` | An outage must not copy the person's own words into CloudWatch. |
+| `test_total_provider_failure_logs_no_provider_message` | Logs keep the error type, status and code, not the provider's message. |
 
-> 2 test functions expand to 32 cases through parametrisation.
+> 5 test functions expand to 150 cases through parametrisation.
 
 ### `test_lambda_session_memory.py`
 
